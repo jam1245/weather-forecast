@@ -5,6 +5,7 @@ A professional, interactive web application for analyzing historical weather dat
 ![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red)
+![Daily Weather Update](https://github.com/jam1245/weather-forecast/actions/workflows/daily-weather-update.yml/badge.svg)
 
 ## ✨ Features
 
@@ -32,6 +33,44 @@ A professional, interactive web application for analyzing historical weather dat
 - Color-coded metrics and visualizations
 - Easy-to-use sidebar controls
 - Data caching for optimal performance (30-minute cache)
+
+## 🔄 Data Freshness & Automation
+
+### Automated Daily Updates
+
+This repository includes a **GitHub Actions workflow** that automatically fetches and updates weather data every day:
+
+- **Schedule**: Runs daily at 6:00 AM UTC (1:00 AM EST)
+- **What Gets Updated**:
+  - `weather_historical_forecast.csv` - Latest 30 days of historical data + 7-day forecast
+  - `temperature_historical_forecast.png` - Updated visualization
+  - `DATA_INFO.md` - Timestamp of last update
+
+### Manual Workflow Triggering
+
+You can manually trigger a fresh data update at any time:
+
+1. Navigate to the [Actions tab](https://github.com/jam1245/weather-forecast/actions)
+2. Click on "Daily Weather Data Update" workflow
+3. Click the "Run workflow" button (top right)
+4. Select the `main` branch
+5. Click "Run workflow" to start
+
+The workflow will:
+1. ✅ Fetch fresh weather data from Open-Meteo API
+2. ✅ Generate updated CSV and PNG files
+3. ✅ Automatically commit and push the changes
+4. ✅ Update the last-updated timestamp
+
+### Data Information
+
+For detailed information about the data structure, update process, and retention policy, see [DATA_INFO.md](DATA_INFO.md).
+
+**Current Data Includes**:
+- 30 days of historical hourly temperature data
+- 7 days (168 hours) of forecast data
+- Hourly resolution for all data points
+- Location: Washington DC (38.9072°N, 77.0369°W)
 
 ## 🚀 Quick Start
 
@@ -96,14 +135,22 @@ The application will automatically open in your default web browser at `http://l
 ## 🔧 Project Structure
 
 ```
-jam_data_test/
+weather-forecast/
+│
+├── .github/
+│   └── workflows/
+│       └── daily-weather-update.yml       # GitHub Actions automation workflow
 │
 ├── weather_app.py                          # Main Streamlit application
-├── weather_forecast.py                     # Original CLI script (still functional)
+├── weather_forecast.py                     # CLI script for data fetching
 ├── requirements.txt                        # Python dependencies
 ├── README.md                              # This file
+├── DATA_INFO.md                           # Detailed data documentation
 │
-└── Generated files (created when app runs):
+├── START_APP.bat                          # Windows launcher script
+├── start_app.sh                           # Unix/Mac launcher script
+│
+└── Generated files (auto-updated daily):
     ├── weather_historical_forecast.csv    # Combined historical + forecast data
     └── temperature_historical_forecast.png # Visualization image
 ```
