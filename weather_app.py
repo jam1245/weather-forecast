@@ -229,7 +229,8 @@ def create_visualization(historical_df, forecast_df, show_confidence_interval=Tr
         ))
 
     # Add vertical line marking transition
-    transition_point = historical_df['datetime'].max()
+    # Convert pandas Timestamp to Python datetime to avoid pandas version issues
+    transition_point = historical_df['datetime'].max().to_pydatetime()
     fig.add_vline(
         x=transition_point,
         line_dash="dash",
