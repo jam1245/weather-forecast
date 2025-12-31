@@ -59,7 +59,7 @@ OPTIONAL_OUTPUTS = {
     'models_cache/': 'ML model cache directory'
 }
 
-# Core dependencies (required)
+# Core dependencies (required for app to run)
 CORE_DEPENDENCIES = [
     'streamlit',
     'pandas',
@@ -68,14 +68,18 @@ CORE_DEPENDENCIES = [
     'numpy'
 ]
 
-# ML dependencies (optional)
+# ML forecasting dependencies (optional - enables ML features)
 ML_DEPENDENCIES = [
     'prophet',
     'statsmodels',
     'pmdarima',
     'sklearn',
-    'joblib',
-    'kaleido'  # For PNG export from CLI script (optional)
+    'joblib'
+]
+
+# Optional dependencies (nice to have, but not required)
+OPTIONAL_DEPENDENCIES = [
+    'kaleido'  # For PNG export from CLI script (has HTML fallback)
 ]
 
 
@@ -164,7 +168,7 @@ def check_dependencies():
             missing_core.append(package)
 
     # Check ML dependencies
-    print(Fore.WHITE + Style.BRIGHT + "\nML Dependencies (Optional):")
+    print(Fore.WHITE + Style.BRIGHT + "\nML Forecasting Dependencies (Optional):")
     missing_ml = []
     for package in ML_DEPENDENCIES:
         # Handle sklearn special case
@@ -172,8 +176,18 @@ def check_dependencies():
         if check_dependency(check_name):
             print_success(f"{package:20s} - Installed")
         else:
-            print_warning(f"{package:20s} - Missing (ML forecasting will be disabled)")
+            print_warning(f"{package:20s} - Missing")
             missing_ml.append(package)
+
+    # Check optional dependencies (informational only)
+    print(Fore.WHITE + Style.BRIGHT + "\nOptional Dependencies:")
+    missing_optional = []
+    for package in OPTIONAL_DEPENDENCIES:
+        if check_dependency(package):
+            print_success(f"{package:20s} - Installed")
+        else:
+            print_info(f"{package:20s} - Not installed (PNG export will use HTML fallback)")
+            missing_optional.append(package)
 
     # Handle missing core dependencies
     if missing_core:
@@ -186,19 +200,21 @@ def check_dependencies():
 
     # Warn about missing ML dependencies
     if missing_ml:
-        print_warning("\n⚠️  Some ML dependencies are missing.")
+        print_warning("\n⚠️  Some ML forecasting dependencies are missing.")
         print_info("ML forecasting will be disabled. Dashboard will still work with API forecasts only.")
         print_info("\nTo enable ML forecasting, install:")
         print(Fore.WHITE + f"    pip install {' '.join(missing_ml)}")
         print_info("\nOr install all dependencies:")
         print(Fore.WHITE + "    pip install -r requirements.txt")
 
-        response = input(Fore.YELLOW + "\nContinue without ML forecasting? (y/n): ")
+        response = input(Fore.YELLOW + "\nContinue without ML forecasting? (y/n): " + Fore.RESET)
         if response.lower() != 'y':
             print_info("Exiting. Install dependencies and try again.")
             return False
+    else:
+        print_success("\n✅ All ML forecasting dependencies installed! ML features enabled.")
 
-    print_success("\n✅ All core dependencies installed!")
+    print_success("\n✅ All required dependencies installed!")
     return True
 
 
