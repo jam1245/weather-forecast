@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime, timedelta
 import logging
@@ -121,7 +122,7 @@ def calculate_confidence_intervals(forecast_df):
 def create_visualization(historical_df, forecast_df, show_confidence_interval=True,
                          ml_forecasts=None, show_api=True, show_ml_prophet=True):
     """
-    Create a professional visualization showing historical data, API forecast, and ML forecasts
+    Create an interactive Plotly visualization showing historical data, API forecast, and ML forecasts
 
     Args:
         historical_df: Historical temperature data
@@ -133,71 +134,181 @@ def create_visualization(historical_df, forecast_df, show_confidence_interval=Tr
     """
     forecast_with_ci = calculate_confidence_intervals(forecast_df)
 
-    fig, ax = plt.subplots(figsize=(16, 7))
+    # Create figure
+    fig = go.Figure()
 
-    # Plot historical data
-    ax.plot(historical_df['datetime'], historical_df['temperature_fahrenheit'],
-            linewidth=2.5, color='#2E86AB', label='Historical (Actual)', zorder=3)
-
-    # Plot API forecast data if enabled
-    if show_api:
-        ax.plot(forecast_with_ci['datetime'], forecast_with_ci['temperature_fahrenheit'],
-                linewidth=2.5, color='#E63946', label='API Forecast (Open-Meteo)', zorder=3)
-
-        # Plot confidence interval if enabled
-        if show_confidence_interval:
-            ax.fill_between(forecast_with_ci['datetime'],
-                             forecast_with_ci['ci_lower'],
-                             forecast_with_ci['ci_upper'],
-                             color='#E63946', alpha=0.2, label='API 95% CI', zorder=2)
-
-    # Plot ML Prophet forecast if available and enabled
-    if ml_forecasts and 'prophet' in ml_forecasts and show_ml_prophet:
-        prophet_df = ml_forecasts['prophet']
-        ax.plot(prophet_df['datetime'], prophet_df['temperature_fahrenheit'],
-                linewidth=2.5, color='#06A77D', label='ML Forecast (Prophet)',
-                linestyle='--', zorder=3)
-
-        # Plot Prophet confidence interval if enabled
-        if show_confidence_interval:
-            ax.fill_between(prophet_df['datetime'],
-                             prophet_df['lower_bound'],
-                             prophet_df['upper_bound'],
-                             color='#06A77D', alpha=0.15, label='Prophet 95% CI', zorder=1)
-
-    # Add vertical line marking transition
-    transition_point = historical_df['datetime'].max()
-    ax.axvline(x=transition_point, color='#6C757D', linestyle='--',
-               linewidth=2, label='History/Forecast Boundary', zorder=4)
-
-    # Formatting
-    ax.set_xlabel('Date', fontsize=13, fontweight='bold')
-    ax.set_ylabel('Temperature (°F)', fontsize=13, fontweight='bold')
-    ax.set_title('Washington DC Temperature Analysis',
-                fontsize=15, fontweight='bold', pad=15)
-
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
-    ax.set_axisbelow(True)
-
-    ax.legend(loc='upper left', fontsize=10, framealpha=0.9, shadow=True)
-
-    plt.xticks(rotation=45, ha='right')
-
-    # Add statistics box
+    # Calculate statistics for annotation
     hist_min = historical_df['temperature_fahrenheit'].min()
     hist_max = historical_df['temperature_fahrenheit'].max()
     hist_mean = historical_df['temperature_fahrenheit'].mean()
     forecast_min = forecast_df['temperature_fahrenheit'].min()
     forecast_max = forecast_df['temperature_fahrenheit'].max()
 
-    stats_text = (f"Historical: {hist_min:.1f}°F to {hist_max:.1f}°F (avg: {hist_mean:.1f}°F)\n"
-                 f"Forecast: {forecast_min:.1f}°F to {forecast_max:.1f}°F")
+    # Plot API confidence interval first (if enabled) - so it appears behind the line
+    if show_api and show_confidence_interval:
+        # Upper bound
+        fig.add_trace(go.Scatter(
+            x=forecast_with_ci['datetime'],
+            y=forecast_with_ci['ci_upper'],
+            mode='lines',
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo='skip',
+            name='API CI Upper'
+        ))
+        # Lower bound with fill
+        fig.add_trace(go.Scatter(
+            x=forecast_with_ci['datetime'],
+            y=forecast_with_ci['ci_lower'],
+            mode='lines',
+            line=dict(width=0),
+            fill='tonexty',
+            fillcolor='rgba(230, 57, 70, 0.2)',
+            name='API 95% CI',
+            hovertemplate='<b>API Confidence Interval</b><br>Upper: %{text[0]:.1f}°F<br>Lower: %{y:.1f}°F<br>Date: %{x}<extra></extra>',
+            text=forecast_with_ci[['ci_upper']].values
+        ))
 
-    ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
-           fontsize=9, verticalalignment='top',
-           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+    # Plot Prophet confidence interval (if enabled)
+    if ml_forecasts and 'prophet' in ml_forecasts and show_ml_prophet and show_confidence_interval:
+        prophet_df = ml_forecasts['prophet']
+        # Upper bound
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['upper_bound'],
+            mode='lines',
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo='skip',
+            name='Prophet CI Upper'
+        ))
+        # Lower bound with fill
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['lower_bound'],
+            mode='lines',
+            line=dict(width=0),
+            fill='tonexty',
+            fillcolor='rgba(6, 167, 125, 0.15)',
+            name='Prophet 95% CI',
+            hovertemplate='<b>Prophet Confidence Interval</b><br>Upper: %{text[0]:.1f}°F<br>Lower: %{y:.1f}°F<br>Date: %{x}<extra></extra>',
+            text=prophet_df[['upper_bound']].values
+        ))
 
-    plt.tight_layout()
+    # Plot historical data
+    fig.add_trace(go.Scatter(
+        x=historical_df['datetime'],
+        y=historical_df['temperature_fahrenheit'],
+        mode='lines',
+        name='Historical (Actual)',
+        line=dict(color='#2E86AB', width=2.5),
+        hovertemplate='<b>Historical Temperature</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+    ))
+
+    # Plot API forecast data if enabled
+    if show_api:
+        fig.add_trace(go.Scatter(
+            x=forecast_with_ci['datetime'],
+            y=forecast_with_ci['temperature_fahrenheit'],
+            mode='lines',
+            name='API Forecast (Open-Meteo)',
+            line=dict(color='#E63946', width=2.5),
+            hovertemplate='<b>API Forecast</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+        ))
+
+    # Plot ML Prophet forecast if available and enabled
+    if ml_forecasts and 'prophet' in ml_forecasts and show_ml_prophet:
+        prophet_df = ml_forecasts['prophet']
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['temperature_fahrenheit'],
+            mode='lines',
+            name='ML Forecast (Prophet)',
+            line=dict(color='#06A77D', width=2.5, dash='dash'),
+            hovertemplate='<b>ML Forecast (Prophet)</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+        ))
+
+    # Add vertical line marking transition
+    transition_point = historical_df['datetime'].max()
+    fig.add_vline(
+        x=transition_point,
+        line_dash="dash",
+        line_color="#6C757D",
+        line_width=2,
+        annotation_text="History/Forecast Boundary",
+        annotation_position="top right"
+    )
+
+    # Update layout with professional styling
+    fig.update_layout(
+        title={
+            'text': 'Washington DC Temperature Analysis',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 20, 'color': '#2E3033', 'family': 'Arial, sans-serif'}
+        },
+        xaxis_title='Date',
+        yaxis_title='Temperature (°F)',
+        hovermode='x unified',
+        template='plotly_white',
+        height=600,
+        font=dict(family="Arial, sans-serif", size=12),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="#CCCCCC",
+            borderwidth=1
+        ),
+        xaxis=dict(
+            showgrid=True,
+            gridwidth=0.5,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            rangeslider=dict(visible=True),
+            type='date'
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridwidth=0.5,
+            gridcolor='rgba(128, 128, 128, 0.2)'
+        ),
+        annotations=[
+            dict(
+                text=f"Historical: {hist_min:.1f}°F to {hist_max:.1f}°F (avg: {hist_mean:.1f}°F)<br>Forecast: {forecast_min:.1f}°F to {forecast_max:.1f}°F",
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                showarrow=False,
+                bgcolor="rgba(245, 222, 179, 0.8)",
+                bordercolor="#C8A878",
+                borderwidth=1,
+                borderpad=8,
+                font=dict(size=10),
+                align="left",
+                xanchor="left",
+                yanchor="top"
+            )
+        ]
+    )
+
+    # Add interactive features
+    fig.update_xaxes(
+        rangeselector=dict(
+            buttons=list([
+                dict(count=1, label="1d", step="day", stepmode="backward"),
+                dict(count=7, label="7d", step="day", stepmode="backward"),
+                dict(count=14, label="14d", step="day", stepmode="backward"),
+                dict(count=1, label="1m", step="month", stepmode="backward"),
+                dict(step="all", label="All")
+            ]),
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            activecolor="#2E86AB",
+            x=0.02,
+            y=1.15
+        )
+    )
 
     return fig
 
@@ -437,8 +548,18 @@ def main():
             show_api=show_api_forecast,
             show_ml_prophet=show_ml_forecast
         )
-        st.pyplot(fig)
-        plt.close()
+        st.plotly_chart(fig, use_container_width=True, config={
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToAdd': ['drawline', 'drawopenpath', 'eraseshape'],
+            'toImageButtonOptions': {
+                'format': 'png',
+                'filename': 'weather_forecast',
+                'height': 800,
+                'width': 1400,
+                'scale': 2
+            }
+        })
 
         # Forecast Comparison Section
         if ml_forecasts and 'prophet' in ml_forecasts and show_api_forecast and show_ml_forecast:

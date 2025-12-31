@@ -63,7 +63,8 @@ OPTIONAL_OUTPUTS = {
 CORE_DEPENDENCIES = [
     'streamlit',
     'pandas',
-    'matplotlib',
+    'plotly',
+    'kaleido',
     'requests',
     'numpy'
 ]

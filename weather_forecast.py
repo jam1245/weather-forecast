@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime, timedelta
 import logging
@@ -144,7 +144,7 @@ def save_to_csv(historical_df, forecast_df, ml_forecasts=None):
 
 def create_visualization(historical_df, forecast_df, ml_forecasts=None):
     """
-    Create a professional visualization showing historical data, API forecast, and ML forecasts
+    Create an interactive Plotly visualization showing historical data, API forecast, and ML forecasts
 
     Args:
         historical_df: Historical temperature data
@@ -155,85 +155,192 @@ def create_visualization(historical_df, forecast_df, ml_forecasts=None):
     forecast_with_ci = calculate_confidence_intervals(forecast_df)
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(16, 8))
+    fig = go.Figure()
 
-    # Plot historical data (solid blue line)
-    ax.plot(historical_df['datetime'], historical_df['temperature_fahrenheit'],
-            linewidth=2.5, color='#2E86AB', label='Historical (Actual)', zorder=3)
-
-    # Plot API forecast data (solid red line)
-    ax.plot(forecast_with_ci['datetime'], forecast_with_ci['temperature_fahrenheit'],
-            linewidth=2.5, color='#E63946', label='API Forecast (Open-Meteo)', zorder=3)
-
-    # Plot 95% confidence interval for API forecast (shaded red area)
-    ax.fill_between(forecast_with_ci['datetime'],
-                     forecast_with_ci['ci_lower'],
-                     forecast_with_ci['ci_upper'],
-                     color='#E63946', alpha=0.2, label='API 95% CI', zorder=2)
-
-    # Plot ML forecasts if available
-    if ml_forecasts and 'prophet' in ml_forecasts:
-        prophet_df = ml_forecasts['prophet']
-        ax.plot(prophet_df['datetime'], prophet_df['temperature_fahrenheit'],
-                linewidth=2.5, color='#06A77D', label='ML Forecast (Prophet)',
-                linestyle='--', zorder=3)
-
-        # Plot Prophet confidence interval (shaded green area)
-        ax.fill_between(prophet_df['datetime'],
-                         prophet_df['lower_bound'],
-                         prophet_df['upper_bound'],
-                         color='#06A77D', alpha=0.15, label='Prophet 95% CI', zorder=1)
-
-    if ml_forecasts and 'sarima' in ml_forecasts:
-        sarima_df = ml_forecasts['sarima']
-        ax.plot(sarima_df['datetime'], sarima_df['temperature_fahrenheit'],
-                linewidth=2.0, color='#F77F00', label='ML Forecast (SARIMA)',
-                linestyle=':', zorder=3)
-
-    # Add vertical line marking transition from history to forecast
-    transition_point = historical_df['datetime'].max()
-    ax.axvline(x=transition_point, color='#6C757D', linestyle='--',
-               linewidth=2, label='History/Forecast Boundary', zorder=4)
-
-    # Formatting
-    ax.set_xlabel('Date', fontsize=14, fontweight='bold')
-    ax.set_ylabel('Temperature (°F)', fontsize=14, fontweight='bold')
-    title = 'Washington DC Temperature: Historical + API Forecast'
-    if ml_forecasts:
-        title += ' + ML Forecast Comparison'
-    ax.set_title(title + '\nwith 95% Confidence Intervals',
-                fontsize=16, fontweight='bold', pad=20)
-
-    # Grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
-    ax.set_axisbelow(True)
-
-    # Legend
-    ax.legend(loc='upper left', fontsize=11, framealpha=0.9, shadow=True)
-
-    # Rotate x-axis labels
-    plt.xticks(rotation=45, ha='right')
-
-    # Add some statistics as text
+    # Calculate statistics for annotation
     hist_min = historical_df['temperature_fahrenheit'].min()
     hist_max = historical_df['temperature_fahrenheit'].max()
     hist_mean = historical_df['temperature_fahrenheit'].mean()
     forecast_min = forecast_df['temperature_fahrenheit'].min()
     forecast_max = forecast_df['temperature_fahrenheit'].max()
 
-    stats_text = (f"Historical: {hist_min:.1f}°F to {hist_max:.1f}°F (avg: {hist_mean:.1f}°F)\n"
-                 f"Forecast: {forecast_min:.1f}°F to {forecast_max:.1f}°F")
+    # Plot API confidence interval first (so it appears behind the line)
+    # Upper bound
+    fig.add_trace(go.Scatter(
+        x=forecast_with_ci['datetime'],
+        y=forecast_with_ci['ci_upper'],
+        mode='lines',
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip',
+        name='API CI Upper'
+    ))
+    # Lower bound with fill
+    fig.add_trace(go.Scatter(
+        x=forecast_with_ci['datetime'],
+        y=forecast_with_ci['ci_lower'],
+        mode='lines',
+        line=dict(width=0),
+        fill='tonexty',
+        fillcolor='rgba(230, 57, 70, 0.2)',
+        name='API 95% CI',
+        hovertemplate='<b>API Confidence Interval</b><br>Upper: %{text[0]:.1f}°F<br>Lower: %{y:.1f}°F<br>Date: %{x}<extra></extra>',
+        text=forecast_with_ci[['ci_upper']].values
+    ))
 
-    ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
-           fontsize=10, verticalalignment='top',
-           bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+    # Plot Prophet confidence interval if available
+    if ml_forecasts and 'prophet' in ml_forecasts:
+        prophet_df = ml_forecasts['prophet']
+        # Upper bound
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['upper_bound'],
+            mode='lines',
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo='skip',
+            name='Prophet CI Upper'
+        ))
+        # Lower bound with fill
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['lower_bound'],
+            mode='lines',
+            line=dict(width=0),
+            fill='tonexty',
+            fillcolor='rgba(6, 167, 125, 0.15)',
+            name='Prophet 95% CI',
+            hovertemplate='<b>Prophet Confidence Interval</b><br>Upper: %{text[0]:.1f}°F<br>Lower: %{y:.1f}°F<br>Date: %{x}<extra></extra>',
+            text=prophet_df[['upper_bound']].values
+        ))
 
-    plt.tight_layout()
+    # Plot historical data
+    fig.add_trace(go.Scatter(
+        x=historical_df['datetime'],
+        y=historical_df['temperature_fahrenheit'],
+        mode='lines',
+        name='Historical (Actual)',
+        line=dict(color='#2E86AB', width=2.5),
+        hovertemplate='<b>Historical Temperature</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+    ))
 
+    # Plot API forecast data
+    fig.add_trace(go.Scatter(
+        x=forecast_with_ci['datetime'],
+        y=forecast_with_ci['temperature_fahrenheit'],
+        mode='lines',
+        name='API Forecast (Open-Meteo)',
+        line=dict(color='#E63946', width=2.5),
+        hovertemplate='<b>API Forecast</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+    ))
+
+    # Plot ML Prophet forecast if available
+    if ml_forecasts and 'prophet' in ml_forecasts:
+        prophet_df = ml_forecasts['prophet']
+        fig.add_trace(go.Scatter(
+            x=prophet_df['datetime'],
+            y=prophet_df['temperature_fahrenheit'],
+            mode='lines',
+            name='ML Forecast (Prophet)',
+            line=dict(color='#06A77D', width=2.5, dash='dash'),
+            hovertemplate='<b>ML Forecast (Prophet)</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+        ))
+
+    # Plot SARIMA forecast if available
+    if ml_forecasts and 'sarima' in ml_forecasts:
+        sarima_df = ml_forecasts['sarima']
+        fig.add_trace(go.Scatter(
+            x=sarima_df['datetime'],
+            y=sarima_df['temperature_fahrenheit'],
+            mode='lines',
+            name='ML Forecast (SARIMA)',
+            line=dict(color='#F77F00', width=2.0, dash='dot'),
+            hovertemplate='<b>ML Forecast (SARIMA)</b><br>%{y:.1f}°F<br>%{x}<extra></extra>'
+        ))
+
+    # Add vertical line marking transition
+    transition_point = historical_df['datetime'].max()
+    fig.add_vline(
+        x=transition_point,
+        line_dash="dash",
+        line_color="#6C757D",
+        line_width=2,
+        annotation_text="History/Forecast Boundary",
+        annotation_position="top right"
+    )
+
+    # Update layout
+    title = 'Washington DC Temperature: Historical + API Forecast'
+    if ml_forecasts:
+        title += ' + ML Forecast Comparison'
+    title += '\nwith 95% Confidence Intervals'
+
+    fig.update_layout(
+        title={
+            'text': title,
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 20, 'color': '#2E3033', 'family': 'Arial, sans-serif'}
+        },
+        xaxis_title='Date',
+        yaxis_title='Temperature (°F)',
+        hovermode='x unified',
+        template='plotly_white',
+        height=800,
+        width=1600,
+        font=dict(family="Arial, sans-serif", size=12),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="#CCCCCC",
+            borderwidth=1
+        ),
+        xaxis=dict(
+            showgrid=True,
+            gridwidth=0.5,
+            gridcolor='rgba(128, 128, 128, 0.2)',
+            type='date'
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridwidth=0.5,
+            gridcolor='rgba(128, 128, 128, 0.2)'
+        ),
+        annotations=[
+            dict(
+                text=f"Historical: {hist_min:.1f}°F to {hist_max:.1f}°F (avg: {hist_mean:.1f}°F)<br>Forecast: {forecast_min:.1f}°F to {forecast_max:.1f}°F",
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                showarrow=False,
+                bgcolor="rgba(245, 222, 179, 0.8)",
+                bordercolor="#C8A878",
+                borderwidth=1,
+                borderpad=8,
+                font=dict(size=10),
+                align="left",
+                xanchor="left",
+                yanchor="top"
+            )
+        ]
+    )
+
+    # Save as static PNG image
     chart_filename = 'temperature_historical_forecast.png'
-    plt.savefig(chart_filename, dpi=300, bbox_inches='tight')
-    print(f"Chart saved to {chart_filename}")
-    plt.close()
+    try:
+        # Try to save as PNG using kaleido (requires: pip install kaleido)
+        fig.write_image(chart_filename, width=1600, height=800, scale=2)
+        print(f"Chart saved to {chart_filename}")
+    except Exception as e:
+        print(f"Warning: Could not save PNG image: {e}")
+        print("Install kaleido for PNG export: pip install kaleido")
+        # Fall back to HTML export
+        html_filename = 'temperature_historical_forecast.html'
+        fig.write_html(html_filename)
+        print(f"Interactive HTML chart saved to {html_filename} instead")
 
 def main():
     """Main function to orchestrate the enhanced weather analysis workflow with ML forecasting"""

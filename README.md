@@ -13,7 +13,13 @@ A professional, interactive web application for analyzing historical weather dat
 - **Real-time Weather Data**: Fetches live historical and forecast data from Open-Meteo API
 - **Customizable Historical Period**: Choose from 7, 14, 30, or 60 days of historical data
 - **Confidence Intervals**: Toggle 95% confidence intervals around forecasts (uncertainty increases with time)
-- **Professional Visualizations**: High-quality matplotlib charts with clear boundaries between historical and forecast data
+- **Interactive Visualizations**: Fully interactive Plotly charts with zoom, pan, hover tooltips, and range slider
+  - **Hover Details**: Precise temperature readings on hover
+  - **Zoom & Pan**: Click and drag to zoom, double-click to reset
+  - **Range Selector**: Quick buttons for 1d, 7d, 14d, 1m, or all data
+  - **Range Slider**: Interactive timeline slider at bottom of chart
+  - **Export Options**: Download charts as high-resolution PNG images
+  - **Drawing Tools**: Add annotations and shapes to the chart
 
 ### 📈 Key Metrics
 - Current temperature with deviation from historical average
@@ -246,6 +252,16 @@ The application will automatically open in your default web browser at `http://l
 - **Vertical Gray Dashed Line**: Marks where history ends and forecast begins
 - **Statistics Box**: Summary of temperature ranges for each dataset
 
+### Interactive Features
+- **Hover Tooltips**: Hover over any point to see exact temperature and timestamp
+- **Zoom**: Click and drag to zoom into specific time periods, double-click to reset
+- **Pan**: Hold shift and drag to pan across the timeline
+- **Range Selector Buttons**: Click 1d, 7d, 14d, 1m, or All to quickly jump to different time ranges
+- **Range Slider**: Use the slider at the bottom to select custom date ranges
+- **Legend Toggle**: Click legend items to show/hide specific data series
+- **Download Chart**: Click the camera icon in the top-right to save as PNG (1400x800px at 2x resolution)
+- **Drawing Tools**: Use toolbar to add custom annotations and shapes to the chart
+
 ### Forecast Comparison Section
 When both API and ML forecasts are enabled, a comparison section shows:
 - **Mean Difference**: Average temperature difference between forecasts
@@ -315,7 +331,7 @@ This application uses the **Open-Meteo API** which provides:
 **Core Technologies:**
 - **Streamlit**: Web application framework
 - **Pandas**: Data manipulation and analysis
-- **Matplotlib**: Data visualization
+- **Plotly**: Interactive data visualization with zoom, pan, and hover features
 - **Requests**: HTTP library for API calls
 - **NumPy**: Numerical computations
 
@@ -410,10 +426,11 @@ This is a demonstration project. Feel free to fork and modify for your own use!
 - Create forecast accuracy tracking over time
 
 **Visualization:**
-- Add interactive Plotly charts (zoom, pan, hover details)
 - Include weather pattern analysis and anomaly detection
 - Create forecast divergence plots (where models disagree)
 - Add historical forecast accuracy dashboard
+- Add 3D surface plots for multi-variable analysis
+- Create animated time-lapse visualizations
 
 ## 📄 License
 
@@ -499,6 +516,6 @@ For issues with the Open-Meteo API, visit: https://open-meteo.com/
 
 ---
 
-**Built with ❤️ using Streamlit and Open-Meteo API**
+**Built with ❤️ using Streamlit, Plotly, and Open-Meteo API**
 
-Last Updated: December 2025
+Last Updated: December 2025 - Now with interactive Plotly visualizations!
