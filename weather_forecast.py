@@ -259,15 +259,31 @@ def create_visualization(historical_df, forecast_df, ml_forecasts=None):
         ))
 
     # Add vertical line marking transition
-    # Convert pandas Timestamp to Python datetime to avoid pandas version issues
-    transition_point = historical_df['datetime'].max().to_pydatetime()
-    fig.add_vline(
+    # Use add_shape instead of add_vline to avoid datetime arithmetic issues
+    transition_point = historical_df['datetime'].max()
+    fig.add_shape(
+        type="line",
+        x0=transition_point,
+        x1=transition_point,
+        y0=0,
+        y1=1,
+        yref="paper",
+        line=dict(color="#6C757D", width=2, dash="dash")
+    )
+    # Add annotation for the boundary line
+    fig.add_annotation(
         x=transition_point,
-        line_dash="dash",
-        line_color="#6C757D",
-        line_width=2,
-        annotation_text="History/Forecast Boundary",
-        annotation_position="top right"
+        y=1.0,
+        yref="paper",
+        text="History/Forecast Boundary",
+        showarrow=False,
+        xanchor="right",
+        yanchor="top",
+        font=dict(size=10, color="#6C757D"),
+        bgcolor="rgba(255, 255, 255, 0.8)",
+        bordercolor="#6C757D",
+        borderwidth=1,
+        borderpad=4
     )
 
     # Update layout
