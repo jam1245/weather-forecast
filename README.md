@@ -138,11 +138,51 @@ For detailed information about the data structure, update process, and retention
 
 ### Running the Application
 
-Simply run the following command in your terminal:
+**🎯 RECOMMENDED: Use the Orchestrator Script (Easiest)**
+
+The orchestrator automates the entire workflow - checking dependencies, generating forecasts, and launching the dashboard:
 
 ```bash
-streamlit run weather_app.py
+python run_weather_dashboard.py
 ```
+
+This will:
+1. ✅ Check all required files and dependencies
+2. ✅ Generate fresh weather forecasts (API + ML)
+3. ✅ Verify output files were created
+4. ✅ Launch Streamlit dashboard automatically
+
+**Advanced Options:**
+
+```bash
+# Skip forecast generation, use existing data
+python run_weather_dashboard.py --skip-forecast
+
+# Force ML model retraining
+python run_weather_dashboard.py --force-retrain
+
+# Use different port (if 8501 is busy)
+python run_weather_dashboard.py --port 8502
+
+# Combine options
+python run_weather_dashboard.py --skip-forecast --port 8502
+```
+
+---
+
+**Manual Method (Alternative)**
+
+If you prefer to run components separately:
+
+1. **Generate forecasts:**
+   ```bash
+   python weather_forecast.py
+   ```
+
+2. **Launch dashboard:**
+   ```bash
+   streamlit run weather_app.py
+   ```
 
 The application will automatically open in your default web browser at `http://localhost:8501`
 
@@ -191,6 +231,7 @@ weather-forecast/
 │   └── workflows/
 │       └── daily-weather-update.yml       # GitHub Actions automation workflow
 │
+├── run_weather_dashboard.py               # 🆕 Main orchestrator script (RECOMMENDED)
 ├── weather_app.py                          # Main Streamlit application (with ML forecasts)
 ├── weather_forecast.py                     # CLI script for data fetching + ML forecasts
 ├── weather_ml_forecast.py                  # 🆕 ML forecasting module (Prophet, SARIMA)
@@ -201,8 +242,8 @@ weather-forecast/
 ├── DATA_INFO.md                           # Detailed data documentation
 ├── MODEL_INFO.md                          # 🆕 ML model documentation and guide
 │
-├── START_APP.bat                          # Windows launcher script
-├── start_app.sh                           # Unix/Mac launcher script
+├── START_APP.bat                          # Windows launcher script (legacy)
+├── start_app.sh                           # Unix/Mac launcher script (legacy)
 │
 ├── Generated files (auto-updated daily):
 │   ├── weather_historical_forecast.csv    # Combined data (historical + API + ML forecasts)
