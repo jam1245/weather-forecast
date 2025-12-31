@@ -138,21 +138,56 @@ For detailed information about the data structure, update process, and retention
 
 ### Running the Application
 
-**🎯 RECOMMENDED: Use the Orchestrator Script (Easiest)**
+**🎯 EASIEST: Use the Platform-Specific Launchers**
 
-The orchestrator automates the entire workflow - checking dependencies, generating forecasts, and launching the dashboard:
+Choose the launcher for your operating system:
+
+**Windows:**
+```cmd
+# Double-click START_APP.bat or run in Command Prompt:
+START_APP.bat
+
+# Quick start (skip forecast generation):
+QUICK_START.bat
+
+# With options:
+START_APP.bat --skip-forecast
+START_APP.bat --port 8502
+```
+
+**Linux/Mac:**
+```bash
+# Make executable first (one time only):
+chmod +x start_app.sh quick_start.sh
+
+# Run the launcher:
+./start_app.sh
+
+# Quick start (skip forecast generation):
+./quick_start.sh
+
+# With options:
+./start_app.sh --skip-forecast
+./start_app.sh --port 8502
+```
+
+These launchers will:
+1. ✅ Check Python installation
+2. ✅ Verify required files exist
+3. ✅ Run the orchestrator (which handles dependencies, forecasts, and dashboard)
+4. ✅ Show helpful error messages if something goes wrong
+
+---
+
+**Advanced: Use the Orchestrator Directly**
+
+The orchestrator provides full control over the workflow:
 
 ```bash
 python run_weather_dashboard.py
 ```
 
-This will:
-1. ✅ Check all required files and dependencies
-2. ✅ Generate fresh weather forecasts (API + ML)
-3. ✅ Verify output files were created
-4. ✅ Launch Streamlit dashboard automatically
-
-**Advanced Options:**
+**Options:**
 
 ```bash
 # Skip forecast generation, use existing data
@@ -170,7 +205,7 @@ python run_weather_dashboard.py --skip-forecast --port 8502
 
 ---
 
-**Manual Method (Alternative)**
+**Manual Method (For Advanced Users)**
 
 If you prefer to run components separately:
 
@@ -242,8 +277,10 @@ weather-forecast/
 ├── DATA_INFO.md                           # Detailed data documentation
 ├── MODEL_INFO.md                          # 🆕 ML model documentation and guide
 │
-├── START_APP.bat                          # Windows launcher script (legacy)
-├── start_app.sh                           # Unix/Mac launcher script (legacy)
+├── START_APP.bat                          # Windows launcher (full workflow)
+├── QUICK_START.bat                        # 🆕 Windows quick launcher (skip forecast)
+├── start_app.sh                           # Linux/Mac launcher (full workflow)
+├── quick_start.sh                         # 🆕 Linux/Mac quick launcher (skip forecast)
 │
 ├── Generated files (auto-updated daily):
 │   ├── weather_historical_forecast.csv    # Combined data (historical + API + ML forecasts)
