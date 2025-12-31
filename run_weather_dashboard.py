@@ -64,7 +64,6 @@ CORE_DEPENDENCIES = [
     'streamlit',
     'pandas',
     'plotly',
-    'kaleido',
     'requests',
     'numpy'
 ]
@@ -75,7 +74,8 @@ ML_DEPENDENCIES = [
     'statsmodels',
     'pmdarima',
     'sklearn',
-    'joblib'
+    'joblib',
+    'kaleido'  # For PNG export from CLI script (optional)
 ]
 
 

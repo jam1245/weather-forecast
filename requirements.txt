@@ -1,16 +1,16 @@
 streamlit>=1.28.0
 pandas>=2.0.0
 plotly>=5.18.0
-kaleido>=0.2.1
 requests>=2.31.0
 numpy>=1.24.0
 
-# ML Forecasting Dependencies
+# ML Forecasting Dependencies (Optional)
 prophet>=1.1.5
 statsmodels>=0.14.0
 pmdarima>=2.0.4
 scikit-learn>=1.3.0
 joblib>=1.3.0
+kaleido>=0.2.1  # Optional: For PNG export from CLI script (not needed for Streamlit app)
 
 # Optional: Better console output for orchestrator
 colorama>=0.4.6
