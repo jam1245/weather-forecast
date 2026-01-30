@@ -345,19 +345,25 @@ def create_visualization(historical_df, forecast_df, ml_forecasts=None):
         ]
     )
 
-    # Save as static PNG image
+    # Always save interactive HTML (used by GitHub Pages)
+    html_filename = 'temperature_historical_forecast.html'
+    fig.write_html(html_filename)
+    print(f"Interactive HTML chart saved to {html_filename}")
+
+    # Copy HTML into docs/ for GitHub Pages
+    import shutil, os
+    os.makedirs('docs', exist_ok=True)
+    shutil.copy(html_filename, os.path.join('docs', 'chart.html'))
+    print(f"Chart copied to docs/chart.html for GitHub Pages")
+
+    # Also try to save as static PNG image
     chart_filename = 'temperature_historical_forecast.png'
     try:
-        # Try to save as PNG using kaleido (requires: pip install kaleido)
         fig.write_image(chart_filename, width=1600, height=800, scale=2)
         print(f"Chart saved to {chart_filename}")
     except Exception as e:
         print(f"Warning: Could not save PNG image: {e}")
         print("Install kaleido for PNG export: pip install kaleido")
-        # Fall back to HTML export
-        html_filename = 'temperature_historical_forecast.html'
-        fig.write_html(html_filename)
-        print(f"Interactive HTML chart saved to {html_filename} instead")
 
 def main():
     """Main function to orchestrate the enhanced weather analysis workflow with ML forecasting"""
@@ -427,7 +433,9 @@ def main():
 
         print(f"\nFiles created:")
         print("  - weather_historical_forecast.csv (combined data with ML forecasts)")
-        print("  - temperature_historical_forecast.png (visualization)")
+        print("  - temperature_historical_forecast.html (interactive chart)")
+        print("  - temperature_historical_forecast.png (static image)")
+        print("  - docs/chart.html (GitHub Pages deployment)")
         if ml_forecasts:
             print("  - models_cache/ (trained ML models)")
         print("="*60)

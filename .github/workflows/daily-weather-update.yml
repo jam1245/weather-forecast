@@ -61,7 +61,7 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          git diff --quiet weather_historical_forecast.csv temperature_historical_forecast.png DATA_INFO.md || echo "changes=true" >> $GITHUB_OUTPUT
+          git diff --quiet weather_historical_forecast.csv temperature_historical_forecast.png temperature_historical_forecast.html docs/ DATA_INFO.md || echo "changes=true" >> $GITHUB_OUTPUT
 
       # Step 7: Configure Git with bot credentials
       - name: Configure Git
@@ -74,7 +74,7 @@ jobs:
       - name: Commit updated weather data
         if: steps.check_changes.outputs.changes == 'true'
         run: |
-          git add weather_historical_forecast.csv temperature_historical_forecast.png DATA_INFO.md
+          git add weather_historical_forecast.csv temperature_historical_forecast.png temperature_historical_forecast.html docs/ DATA_INFO.md
           git commit -m "🤖 Auto-update weather data - $(date -u '+%Y-%m-%d %H:%M UTC')" \
                      -m "Automated daily weather data refresh" \
                      -m "Data fetched from Open-Meteo API" \
@@ -82,6 +82,8 @@ jobs:
                      -m "Updated files:" \
                      -m "- weather_historical_forecast.csv" \
                      -m "- temperature_historical_forecast.png" \
+                     -m "- temperature_historical_forecast.html" \
+                     -m "- docs/ (GitHub Pages)" \
                      -m "- DATA_INFO.md (timestamp)"
 
       # Step 9: Push changes back to the main branch
