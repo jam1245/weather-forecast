@@ -7,6 +7,8 @@ A professional, interactive web application for analyzing historical weather dat
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red)
 ![Daily Weather Update](https://github.com/jam1245/weather-forecast/actions/workflows/daily-weather-update.yml/badge.svg)
 
+**[View Live Weather Chart](https://jam1245.github.io/weather-forecast/)** - Interactive forecast updated daily via GitHub Actions
+
 ## ✨ Features
 
 ### 📊 Interactive Dashboard
